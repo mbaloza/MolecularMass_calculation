@@ -1,4 +1,4 @@
-# Chemical Dataset Updater
+# Chemical Dataset Calculation
 
 This script updates a chemical dataset by calculating molecular masses from SMILES, retrieving missing SMILES from PubChem, and merging datasets.
 
@@ -8,7 +8,7 @@ This script updates a chemical dataset by calculating molecular masses from SMIL
 ## Usage
 1. Clone the repository.
 2. Install the required R packages.
-3. Run the script `update_chemical_dataset.R`.
+3. Run the script `MolecularMass_calculation_UFZ.R`.
 4. Input the paths to your datasets when prompted.
 
 ## Output
