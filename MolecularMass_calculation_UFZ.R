@@ -1,23 +1,105 @@
-install.packages("rcdk")
-install.packages("readr")
+# Script: Molecular Mass calculation in a Chemical Dataset
+# Author: Marwa Baloza
+# Description: This script calculates molecular masses from SMILES, retrieves missing SMILES from PubChem,
+#              and updates the dataset with the new data.
+
+# Load necessary libraries
+if (!require("rcdk")) install.packages("rcdk")
+if (!require("readr")) install.packages("readr")
+if (!require("dplyr")) install.packages("dplyr")
+if (!require("webchem")) install.packages("webchem")
+
 library(rcdk)
 library(readr)
+library(dplyr)
+library(webchem)
 
-# Read CSV file
-data <- read_csv("path/to/your/data.csv")
-
-# Define function and calculate molecular masses
+# Function to calculate molecular mass from SMILES
 calculate_molecular_mass <- function(smiles) {
-  mol <- parse.smiles(smiles)[[1]]
-  if (!is.null(mol)) {
-    return(get.mol2formula(mol)@mass)
-  } else {
+  if (is.na(smiles) {
     return(NA)
   }
+  molecule <- parse.smiles(smiles)[[1]]
+  if (is.null(molecule)) {
+    return(NA)
+  }
+  return(get.mol2formula(molecule, charge = 0)@mass)
 }
 
+# Function to retrieve SMILES from PubChem using compound name
+get_smiles_pubchem <- function(name) {
+  tryCatch({
+    cid_result <- get_cid(name)
+    if (nrow(cid_result) == 0) return(NA)  # If no CID found
+    cid <- as.character(cid_result$cid[1])  # Extract first CID
+    smiles_data <- pc_prop(cid, properties = "CanonicalSMILES")
+    smiles_only <- as.character(smiles_data$CanonicalSMILES[1])  # Extract SMILES
+    return(smiles_only)
+  }, error = function(e) {
+    return(NA)
+  })
+}
+
+# Function to update missing SMILES in a dataset
+update_missing_smiles <- function(df) {
+  missing_smiles_index <- which(is.na(df$SMILES) | df$SMILES == "")
+  df$SMILES[missing_smiles_index] <- sapply(df$Name[missing_smiles_index], get_smiles_pubchem)
+  return(df)
+}
+
+# Function to merge two datasets and update missing values
+merge_and_update_datasets <- function(data1, data2) {
+  updated_data <- left_join(data1, data2, by = "Name")
+  updated_data <- updated_data %>%
+    mutate(
+      SMILES = ifelse(is.na(SMILES.x) | SMILES.x == "", SMILES.y, SMILES.x),
+      Molecular_Mass = ifelse(is.na(Molecular_Mass.x), Molecular_Mass.y, Molecular_Mass.x)
+    ) %>%
+    select(-ends_with(".y"), -SMILES.x, -Molecular_Mass.x)  # Remove temporary columns
+  colnames(updated_data) <- gsub(".x", "", colnames(updated_data))  # Rename columns
+  return(updated_data)
+}
+
+# Main script
+# Step 1: Load the initial dataset
+file_path1 <- "UFZWANATARG_11082019.csv"
+data <- read_csv(file_path1)
+
+# Step 2: Calculate molecular masses
 data$Molecular_Mass <- sapply(data$SMILES, calculate_molecular_mass)
 
-# Save results
-write_csv(data, "compounds_with_molecular_masses.csv")
+# Step 3: Save the dataset with molecular masses
+output_path1 <- "UFZWANATARG_MolecularMass.csv"
+write_csv(data, output_path1)
 
+# Step 4: Identify and save rows with missing molecular masses
+missing_molecular_mass <- data[is.na(data$Molecular_Mass), ]
+output_path2 <- "missing_molecular_mass.csv"
+write_csv(missing_molecular_mass, output_path2)
+
+# Step 5: Update missing SMILES in the missing molecular mass dataset
+df <- read_csv(output_path2)
+df <- update_missing_smiles(df)
+
+# Step 6: Save the updated dataset with missing SMILES
+output_path3 <- "Updated_SMILES.csv"
+write_csv(df, output_path3)
+
+# Step 7: Calculate molecular masses for the updated SMILES dataset
+MM <- read_csv(output_path3)
+MM$Molecular_Mass <- sapply(MM$SMILES, calculate_molecular_mass)
+
+# Step 8: Save the final updated dataset
+output_path4 <- "Updated_SMILES_with_Molecular_Mass.csv"
+write_csv(MM, output_path4)
+
+# Step 9: Merge the original dataset with the updated dataset
+data1 <- read_csv(output_path1)
+data2 <- read_csv(output_path4)
+updated_data <- merge_and_update_datasets(data1, data2)
+
+# Step 10: Save the final compiled dataset
+output_path5 <- "Updated_UFZWANATARG_MolecularMass.csv"
+write_csv(updated_data, output_path5)
+
+print("Script execution complete. All datasets have been updated and saved")
