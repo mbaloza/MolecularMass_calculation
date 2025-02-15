@@ -1,6 +1,6 @@
-# Chemical Dataset Calculation
+# Molecular Mass Calculation
 
-This script updates a chemical dataset by calculating molecular masses from SMILES, retrieving missing SMILES from PubChem, and merging datasets.
+This script calculates molecular masses from SMILES, retrieving missing SMILES from PubChem, and merging datasets.
 
 ## Dependencies
 - R packages: `rcdk`, `readr`, `dplyr`, `webchem`
