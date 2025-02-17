@@ -6,9 +6,8 @@ This script calculates molecular masses from SMILES, retrieving missing SMILES f
 - R packages: `rcdk`, `readr`, `dplyr`, `webchem`
 
 ## Usage
-1. Clone the repository.
-2. Install the required R packages.
-3. Run the script `MolecularMass_calculation_UFZ.R`.
+1. Install the required R packages.
+2. Run the script `MolecularMass_calculation_UFZ.R`.
 4. Input the paths to your datasets when prompted.
 
 ## Output
